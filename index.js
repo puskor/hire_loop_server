@@ -38,7 +38,8 @@ async function run() {
         const jobs = database.collection("jobs");
         app.post("/api/job", async (req, res) => {
             const jobData = await req.body;
-            console.log(jobData)
+            const result = await jobs.insertOne(jobData);
+            res.json(result)
         })
         app.get("/api/jobs",async(req,res)=>{
             const result = await jobs.find().toArray()
