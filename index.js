@@ -16,28 +16,38 @@ async function run() {
         await client.connect();
         const database = client.db("hire_loop");
 
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged MongoDB successfully!");
-
         app.get("/", async (req, res) => {
             res.send("hello world")
         })
 
         // company
         const company = database.collection("company");
-        app.post("/company",async(req,res)=>{
+        app.post("/api/company", async (req, res) => {
             const company_data = req.body;
             // console.log(company_data)
             const result = await company.insertOne(company_data);
             res.json(result);
         })
-
-        app.get("/company",async(req,res)=>{
+        app.get("/api/company", async (req, res) => {
             const result = await company.find().toArray();
             res.json(result);
         })
 
-        
+        // Job
+
+        const jobs = database.collection("jobs");
+        app.post("/api/job", async (req, res) => {
+            const jobData = await req.body;
+            console.log(jobData)
+        })
+        app.get("/api/jobs",async(req,res)=>{
+            const result = await jobs.find().toArray()
+            res.json(result)
+        })
+
+
+
+
 
     } finally {
 
