@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express()
 var cors = require('cors');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 require('dotenv').config()
 app.use(cors());
 app.use(express.json());
@@ -29,7 +29,12 @@ async function run() {
             res.json(result);
         })
         app.get("/api/company", async (req, res) => {
-            const result = await company.find().toArray();
+            const filter = {}
+            if (req.query.user_id) {
+                filter.
+                    userId = req.query.user_id;
+            }
+            const result = await company.find(filter).toArray();
             res.json(result);
         })
 
@@ -41,8 +46,20 @@ async function run() {
             const result = await jobs.insertOne(jobData);
             res.json(result)
         })
-        app.get("/api/jobs",async(req,res)=>{
-            const result = await jobs.find().toArray()
+
+        app.get("/api/jobs", async (req, res) => {
+            const filter = {}
+            if (req.query.user_id) {
+                filter.
+                    postmanId = req.query.user_id;
+            }
+            if (req.query.job_id) {
+                filter.
+                    _id = new ObjectId(req.query.job_id);
+            }
+            // console.log(req.query.job_id)
+
+            const result = await jobs.find(filter).toArray()
             res.json(result)
         })
 
