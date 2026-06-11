@@ -65,6 +65,26 @@ async function run() {
 
 
 
+        const apply = database.collection("job_apply");
+        app.post("/api/job_apply", async (req, res) => {
+            const apply_data = await req.body;
+            const result = await apply.insertOne(apply_data);
+            res.json(result)
+        })
+
+        app.get("/api/job_apply", async (req, res) => {
+            const filter = {};
+
+            if (req.query.user_id) {
+                filter.applierId = req.query.user_id
+            }
+
+            const result = await apply.find(filter).toArray()
+            res.json(result);
+        })
+
+
+
 
 
     } finally {
