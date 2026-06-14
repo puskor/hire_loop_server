@@ -34,17 +34,15 @@ async function run() {
                 filter.
                     userId = req.query.user_id;
             }
-            if (req.query.company_id) {
-                filter.
-                    _id = new ObjectId(req.query.company_id);
-            }
             const result = await company.find(filter).toArray();
             res.json(result);
         })
 
         app.patch("/api/company/:id", async (req, res) => {
             try {
+
                 const id = req.params.id;
+                // console.log(id)
                 const { status } = req.body;
 
                 const result = await company.updateOne(
@@ -55,6 +53,7 @@ async function run() {
                         },
                     }
                 );
+                // console.log(result, "result")
 
                 res.json({
                     success: true,
@@ -76,21 +75,44 @@ async function run() {
         })
 
         app.get("/api/jobs", async (req, res) => {
-            const filter = {}
+            const filter = {};
+
             if (req.query.user_id) {
-                filter.
-                    postmanId = req.query.user_id;
+                filter.postmanId = req.query.user_id;
             }
+
             if (req.query.job_id) {
-                filter.
-                    _id = new ObjectId(req.query.job_id);
+                filter._id = new ObjectId(req.query.job_id);
             }
-            // console.log(req.query.job_id)
 
-            const result = await jobs.find(filter).toArray()
-            res.json(result)
-        })
+            const result = await jobs.aggregate([
+                { $match: filter },
+                {
+                    $lookup: {
+                        from: "company",
+                        let: { companyId: { $toObjectId: "$companyId" } },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $eq: ["$_id", "$$companyId"]
+                                    }
+                                }
+                            }
+                        ],
+                        as: "company"
+                    }
+                },
+                { $unwind: "$company" },
+                {
+                    $match: {
+                        "company.status": "approved"
+                    }
+                }
+            ]).toArray();
 
+            res.json(result);
+        });
 
 
         const apply = database.collection("job_apply");
