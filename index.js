@@ -34,9 +34,37 @@ async function run() {
                 filter.
                     userId = req.query.user_id;
             }
+            if (req.query.company_id) {
+                filter.
+                    _id = new ObjectId(req.query.company_id);
+            }
             const result = await company.find(filter).toArray();
             res.json(result);
         })
+
+        app.patch("/api/company/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const { status } = req.body;
+
+                const result = await company.updateOne(
+                    { _id: new ObjectId(id) },
+                    {
+                        $set: {
+                            status: status,
+                        },
+                    }
+                );
+
+                res.json({
+                    success: true,
+                    message: "Status updated successfully",
+                    result,
+                });
+            } catch (error) {
+                res.status(500).json({ success: false, error: error.message });
+            }
+        });
 
         // Job
 
