@@ -24,6 +24,8 @@ async function run() {
         const company = database.collection("company");
         app.post("/api/company", async (req, res) => {
             const company_data = req.body;
+            const token = req.headers;
+            console.log("token", token)
             // console.log(company_data)
             const result = await company.insertOne(company_data);
             res.json(result);
@@ -38,7 +40,13 @@ async function run() {
             res.json(result);
         })
 
-        app.patch("/api/company/:id", async (req, res) => {
+
+        const verifyToken = (req,res,next)=>{
+            console.log("this is verifyToken user ",req.headers)
+            next()
+        }
+
+        app.patch("/api/company/:id", verifyToken ,async  (req, res) => {
             try {
 
                 const id = req.params.id;
@@ -70,6 +78,8 @@ async function run() {
         const jobs = database.collection("jobs");
         app.post("/api/job", async (req, res) => {
             const jobData = await req.body;
+            const token = req.headers;
+            console.log("token", token)
             const result = await jobs.insertOne(jobData);
             res.json(result)
         })
