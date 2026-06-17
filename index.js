@@ -7,21 +7,27 @@ app.use(cors());
 app.use(express.json());
 const port = process.env.PORT || 3000;
 
-
 const uri = process.env.DB_URI
 const client = new MongoClient(uri);
+
 
 async function run() {
     try {
         await client.connect();
         const database = client.db("hire_loop");
 
+        const user = database.collection("user")
+        const userSession = database.collection("session");
+        const company = database.collection("company");
+        const jobs = database.collection("jobs");
+
+
+
+
         app.get("/", async (req, res) => {
             res.send("hello world")
         })
-
         // company
-        const company = database.collection("company");
         app.post("/api/company", async (req, res) => {
             const company_data = req.body;
             const token = req.headers;
@@ -40,13 +46,69 @@ async function run() {
             res.json(result);
         })
 
+        // app.get("/api/session", async (req, res) => {
+        //     const filter = {
+        //         // userId: new ObjectId("6a2e4b21468c2d856d7554fe")
+        //         token: "UpFejm0yy584SVMdo04YihJ10bbOjoRn"
+        //     }
+        //     console.log(filter)
+        //     const result = await userSession.find(filter).toArray()
+        //     res.json(result)
+        // })
+        const { ObjectId } = require("mongodb");
 
-        const verifyToken = (req,res,next)=>{
-            console.log("this is verifyToken user ",req.headers)
-            next()
-        }
+        const verifyToken = async (req, res, next) => {
+            try {
+                const authHeader = req.headers.authorization;
 
-        app.patch("/api/company/:id", verifyToken ,async  (req, res) => {
+                if (!authHeader) {
+                    return res.status(401).json({
+                        message: "Token not found"
+                    });
+                }
+
+                const token = authHeader.split(" ")[1];
+
+                const session = await userSession.findOne({ token });
+
+                if (!session) {
+                    return res.status(401).json({
+                        message: "Invalid token"
+                    });
+                }
+
+                const currentUser = await user.findOne({
+                    _id: new ObjectId(session.userId)
+                });
+
+                if (!currentUser) {
+                    return res.status(404).json({
+                        message: "User not found"
+                    });
+                }
+
+                req.user = currentUser;
+
+                next();
+            } catch (error) {
+                console.error(error);
+
+                return res.status(500).json({
+                    message: "Internal server error"
+                });
+            }
+        };
+
+        const verifyAdmin = (req, res, next) => {
+            if (req.user.role !== "admin") {
+                return res.status(403).json({
+                    message: "Access denied"
+                });
+            }
+            next();
+        };
+
+        app.patch("/api/company/:id", verifyToken, verifyAdmin, async (req, res) => {
             try {
 
                 const id = req.params.id;
@@ -75,7 +137,6 @@ async function run() {
 
         // Job
 
-        const jobs = database.collection("jobs");
         app.post("/api/job", async (req, res) => {
             const jobData = await req.body;
             const token = req.headers;
